@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+openai
+opensearch-py
+psycopg2-binary
+SQLAlchemy
+python-multipart

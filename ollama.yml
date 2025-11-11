@@ -1,0 +1,19 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"         # API HTTP (OpenAI-compatible)
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0   # Garante que o servidor escute fora do container
+    
+
+volumes:
+  ollama-data:
+    driver: local
+
+
+# docker exec -it ollama ollama pull gpt-oss

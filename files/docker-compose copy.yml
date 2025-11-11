@@ -8,11 +8,8 @@ services:
       - node.name=${OPENSEARCH_NODE_NAME}
       - discovery.type=${OPENSEARCH_DISCOVERY_TYPE}
       - bootstrap.memory_lock=${OPENSEARCH_BOOTSTRAP_MEMORY_LOCK}
-      - OPENSEARCH_JAVA_OPTS=${OPENSEARCH_JAVA_OPTS}
-      # Desliga o plugin de segurança (mais garantido)
-      - DISABLE_SECURITY_PLUGIN=true
-      # Mantém também o flag interno, não atrapalha:
-      #- plugins.security.disabled=${OPENSEARCH_PLUGINS_SECURITY_DISABLED}
+      - "OPENSEARCH_JAVA_OPTS=${OPENSEARCH_JAVA_OPTS}"
+      - plugins.security.disabled=${OPENSEARCH_PLUGINS_SECURITY_DISABLED}
     ulimits:
       memlock:
         soft: -1
@@ -23,7 +20,7 @@ services:
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     ports:
-      - "${OPENSEARCH_PORT}:9200"
+      - "${OPENSEARCH_PORT}:${OPENSEARCH_PORT}"
     networks:
       - logcopilot-net
     restart: unless-stopped
@@ -32,18 +29,13 @@ services:
     image: opensearchproject/opensearch-dashboards:2
     container_name: opensearch-dashboards
     environment:
-      # Host do OpenSearch
       - OPENSEARCH_HOSTS=${OPENSEARCH_HOSTS}
-      # Desliga o plugin de segurança do Dashboards (tira a tela de login)
-      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
-      # Essa variável OPENSEARCH_SECURITY_ENABLED muitas vezes é ignorada, pode remover se quiser
-      # - OPENSEARCH_SECURITY_ENABLED=${OPENSEARCH_SECURITY_ENABLED}
+      - OPENSEARCH_SECURITY_ENABLED=${OPENSEARCH_SECURITY_ENABLED}
       - SERVER_HOST=${SERVER_HOST}
-      - SERVER_PORT=${DASHBOARDS_PORT}
     depends_on:
       - opensearch
     ports:
-      - "${DASHBOARDS_PORT}:5601"
+      - "${DASHBOARDS_PORT}:${DASHBOARDS_PORT}"
     networks:
       - logcopilot-net
     restart: unless-stopped
@@ -67,7 +59,7 @@ services:
     environment:
       - OPENAI_API_KEY=fake-key
       - OPENAI_BASE_URL=http://192.168.40.214:11434/v1
-      - OPENAI_MODEL=mistral         # ou mistral, llama3 etc.
+      - OPENAI_MODEL=gpt-oss          # ou mistral, llama3 etc.
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=logcopilot
@@ -81,6 +73,27 @@ services:
       - opensearch
     ports:
       - "8080:8080"
+    networks:
+      - logcopilot-net
+    restart: unless-stopped
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    ports:
+      - "${N8N_PORT}:${N8N_PORT}"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=${N8N_PORT}
+      - N8N_PROTOCOL=${N8N_PROTOCOL}
+      - NODE_ENV=${NODE_ENV}
+    volumes:
+      - ${N8N_DATA_DIR}:/home/node/.n8n
+    depends_on:
+      - app
+      - opensearch
     networks:
       - logcopilot-net
     restart: unless-stopped
